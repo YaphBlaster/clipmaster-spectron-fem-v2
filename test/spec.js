@@ -1,14 +1,14 @@
-const assert = require('assert');
-const path = require('path');
-const Application = require('spectron').Application;
-const electronPath = require('electron');
+const assert = require("assert");
+const path = require("path");
+const Application = require("spectron").Application;
+const electronPath = require("electron");
 
 const app = new Application({
   path: electronPath,
-  args: [path.join(__dirname, '..')],
+  args: [path.join(__dirname, "..")],
 });
 
-describe('Clipmaster 9000', function() {
+describe("Clipmaster 9000", function () {
   this.timeout(10000);
 
   beforeEach(() => {
@@ -21,32 +21,40 @@ describe('Clipmaster 9000', function() {
     }
   });
 
-  it('should work', () => {
-    // Delete this test as soon as you write one of your own.
-    assert.ok(true);
-  });
-
-  it.skip('shows an initial window', async () => {
+  it("shows an initial window", async () => {
     // We'll do this one together.
+    const count = await app.client.getWindowCount();
+    return assert.strictEqual(count, 1);
   });
 
-  it.skip('has the correct title', async () => {
+  it("has the correct title", async () => {
     // We'll do this one together.
+    const title = await app.client.waitUntilWindowLoaded().getTitle();
+    return assert.strictEqual(title, "Clipmaster 9000");
   });
 
-  it.skip('does not have the developer tools open', async () => {
+  it("does not have the developer tools open", async () => {
     // We'll do this one together.
+    const devToolsAreOpen = await app.client
+      .waitUntilWindowLoaded()
+      .browserWindow.isDevToolsOpened();
+    return assert.strictEqual(devToolsAreOpen, false);
   });
 
-  it.skip('has a button with the text "Copy from Clipboard"', async () => {
+  it('has a button with the text "Copy from Clipboard"', async () => {
     // We'll do this one together.
+    const buttonText = await app.client.getText("#copy-from-clipboard");
+    return assert.strictEqual(buttonText, "Copy from Clipboard");
   });
 
-  it.skip('should not have any clippings when the application starts up', async () => {
+  it("should not have any clippings when the application starts up", async () => {
     // We'll do this one together.
+    await app.client.waitUntilWindowLoaded();
+    const clippings = await app.client.$$(".clippings-list-item");
+    return assert.strictEqual(clippings.length, 0);
   });
 
-  it.skip('should have one clipping when the "Copy From Clipboard" button has been pressed', async () => {
+  it('should have one clipping when the "Copy From Clipboard" button has been pressed', async () => {
     /*
      * Independent Exercise!
      *
@@ -54,13 +62,24 @@ describe('Clipmaster 9000', function() {
      * - Verify that there is now one .clippings-list-item element
      *   on the page.
      */
+    await app.client.waitUntilWindowLoaded();
+    await app.client.click("#copy-from-clipboard");
+    const clippings = await app.client.$$(".clippings-list-item");
+    return assert.strictEqual(clippings.length, 1);
   });
 
-  it.skip('should successfully remove a clipping', async () => {
+  it("should successfully remove a clipping", async () => {
     // We'll do this one together.
+    await app.client.waitUntilWindowLoaded();
+    await app.client
+      .click("#copy-from-clipboard")
+      .moveToObject(".clippings-list-item")
+      .click(".remove-clipping");
+    const clippings = await app.client.$$(".clippings-list-item");
+    return assert.strictEqual(clippings.length, 0);
   });
 
-  it.skip('should have the correct text in a new clipping', async () => {
+  it("should have the correct text in a new clipping", async () => {
     /*
      * Independent Exercise!
      *
@@ -73,9 +92,14 @@ describe('Clipmaster 9000', function() {
      * Hint—You can write text to the clipboard using:
      *   app.electron.clipboard.writeText('Vegan Ham');
      */
+    await app.client.waitUntilWindowLoaded();
+    await app.electron.clipboard.writeText("vegan ham");
+    await app.client.click("#copy-from-clipboard");
+    const clippingText = await app.client.getText(".clipping-text");
+    return assert.strictEqual(clippingText, "vegan ham");
   });
 
-  it.skip('it should write the text of the clipping to the clipboard', async () => {
+  it("it should write the text of the clipping to the clipboard", async () => {
     /*
      * Independent Exercise!
      *
@@ -91,5 +115,13 @@ describe('Clipmaster 9000', function() {
      *   `app.electron.clipboard.readText()`.
      *
      */
+    await app.client.waitUntilWindowLoaded();
+    await app.electron.clipboard.writeText("vegan ham");
+    await app.client.click("#copy-from-clipboard");
+    await app.electron.clipboard.writeText("something totally different");
+    await app.client.click(".copy-clipping");
+
+    const clippingText = await app.client.getText(".clipping-text");
+    return assert.strictEqual(clippingText, "vegan ham");
   });
 });
